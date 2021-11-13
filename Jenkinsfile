@@ -1,7 +1,7 @@
-def suitToRun = [:]
+def stepsToRun = [:]
 
 pipeline {
-    agent none
+    agent any
 
     stages {
         stage ("Prepare Stages"){
