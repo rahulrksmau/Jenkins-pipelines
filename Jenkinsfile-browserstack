@@ -1,29 +1,45 @@
 pipeline {
     agent any
-
+    
     parameters {
-        string(name: 'token', defaultValue: 'ug3pbOo11AMclQPFlpcNeWTT4m1Vf2NeR2KYO1t4yUg1', description: 'Test project Api token')
+        string(name: 'weburl', defaultValue: 'https://example.com', description: 'Enter web URL')
+        string(name: 'username', defaultValue: 'user', description: 'Enter login username')
+        password(name: 'password', defaultValue: 'password', description: 'Enter login password')
+    }
+
+    environment {   
+        USERNAME = "${username}"
+        PASSWORD = "${password}"
     }
 
     stages {
-        stage ("Install requirement") {
+
+        stage("Install Requirements") {
             steps {
-                echo "Installing requirement from pip install"
+                echo "Installing requirement from pip"
                 echo "Workspace: ${workspace}"
-                bat "python -m virtualenv venv && venv\\Scripts\\activate && pip install -r requirement.txt && venv\\Scripts\\deactivate.bat"
+                sh "pip -m virtualenv venv && activate && pip install -r requirement.txt && deactivate"
             }
         }
-        stage ("Run tests") {
+
+        stage("Run tests") {
             steps {
-                script {            
-                    TEST_FILE = "${workspace}\\test_siq_tests.py"
-                }
-                steps {
-                browserstack(credentialsId: '373e6a65-62a7-4548-ba57-3243d5441127', localConfig: [localOptions: '', localPath: ""]) {                
-                    echo "venv\\Scripts\\activate && set API_TOKEN=${token} && python -m pytest \"${TEST_FILE}\" && venv\\Scripts\\deactivate.bat"
+                echo "Workspace: ${workspace}"                    
+                    browserstack(credentialsId: 'browserstack_jenkins_credential', localConfig: [localOptions: '', localPath: ""]) {                
+                        script {
+                            TEST_FILE = "${workspace}/test_script.py"
+                        }
+                        echo "Running script : ${TEST_FILE}"
+                        echo "activate && set USERNAME=${USERNAME} && set PASSWORD=${PASSWORD} && set URL=${weburl} && python \"${TEST_FILE}\" && deactivate"
+                        sh "activate && set USERNAME=${USERNAME} && set PASSWORD=${PASSWORD} && set URL=${weburl} && python \"${TEST_FILE}\" && deactivate"
                     }
-                }
             }
+        }
+    }
+    post{
+        always {
+            echo "Generating browserstack result"
+            browserStackReportPublisher 'automate'   
         }
     }
 }
